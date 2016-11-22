@@ -37,11 +37,15 @@ Read on to learn:
    :maxdepth: 2
    :caption: Key concepts
 
-   data-model
-   transaction-data-types
-   merkle-trees
-   consensus
-   clauses
+   key-concepts
+   key-concepts-ecosystem
+   key-concepts-data-model
+   key-concepts-core-types
+   key-concepts-financial-model
+   key-concepts-flow-framework
+   key-concepts-consensus-notaries
+   key-concepts-vault
+   key-concepts-security-model
 
 .. toctree::
    :maxdepth: 2
@@ -106,6 +110,7 @@ Read on to learn:
    release-notes
    codestyle
    building-the-docs
+   further-notes-on-kotlin
    publishing-corda
    azure-vm
 

@@ -1,5 +1,19 @@
+Consensus and notaries
+======================
+
+Corda has "pluggable" notary services which provide transaction ordering and timestamping services. This is to improve
+privacy, scalability, legal-system compatibility and algorithmic agility. A single service may be composed of many mutually
+untrusting nodes coordinating via a byzantine fault tolerant algorithm, or could be very simple, like a single machine.
+
+Notaries are expected to be composed of multiple mutually distrusting parties who use a standard consensus algorithm.
+Notaries are identified by and sign with :ref:`composite-keys`. Notaries accept transactions submitted to them for processing
+and either return a signature over the transaction, or a rejection error that states that a double spend has occurred.
+The presence of a notary signature from the state’s chosen notary indicates transaction finality. An app developer triggers
+notarisation by invoking the ``FinalityFlow`` on the transaction once all other necessary signatures have been gathered.
+Once the finality flow returns successfully, the transaction can be considered committed to the database.
+
 Consensus model
-===============
+---------------
 
 The fundamental unit of consensus in Corda is the **state**. The concept of consensus can be divided into two parts:
 
@@ -94,13 +108,13 @@ This is an obvious privacy leak.
 Our platform is flexible and we currently support both validating and non-validating notary implementations -- a party can select which one to use based on its own privacy requirements.
 
 .. note:: In the non-validating model the "denial of state" attack is partially alleviated by requiring the calling
-   party to authenticate and storing its identity for the request. The conflict information returned by the notary
+party to authenticate and storing its identity for the request. The conflict information returned by the notary
    specifies the consuming transaction ID along with the identity of the party that had requested the commit. If the
    conflicting transaction is valid, the current one gets aborted; if not - a dispute can be raised and the input states
    of the conflicting invalid transaction are "un-committed" (to be covered by legal process).
 
 .. note:: At present all notaries can see the entire contents of a transaction, but we have a separate piece of work to
-   replace the parts of the transaction it does not require knowing about with hashes (only input references, timestamp
+replace the parts of the transaction it does not require knowing about with hashes (only input references, timestamp
    information, overall transaction ID and the necessary digests of the rest of the transaction to prove that the
    referenced inputs/timestamps really do form part of the stated transaction ID should be visible).
 
@@ -138,4 +152,9 @@ By creating a range that can be either closed or open at one end, we allow all o
 * This transaction occurred at some point roughly around the given time (e.g. on a specific day)
 
 .. note:: It is assumed that the time feed for a notary is GPS/NaviStar time as defined by the atomic
-   clocks at the US Naval Observatory. This time feed is extremely accurate and available globally for free.
+clocks at the US Naval Observatory. This time feed is extremely accurate and available globally for free.
+
+Also see section 7 of the `Technical white paper`_ which covers this topic in significant more depth.
+
+.. _`Technical white paper`: _static/corda-technical-whitepaper.pdf
+
