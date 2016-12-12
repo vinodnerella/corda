@@ -111,7 +111,7 @@ class Node(override val configuration: FullNodeConfiguration, networkMapAddress:
     // serialisation/deserialisation work.
     override val serverThread = AffinityExecutor.ServiceAffinityExecutor("Node thread", 1)
 
-    lateinit var webServer: Server
+    //lateinit var webServer: Server
     var messageBroker: ArtemisMessagingServer? = null
 
     // Avoid the lock being garbage collected. We don't really need to release it as the OS will do so for us
@@ -311,13 +311,14 @@ class Node(override val configuration: FullNodeConfiguration, networkMapAddress:
         // Only start the service API requests once the network map registration is complete
         thread(name = "WebServer") {
             networkMapRegistrationFuture.getOrThrow()
-            try {
-                webServer = initWebServer(connectLocalRpcAsNodeUser())
-            } catch(ex: Exception) {
-                // TODO: We need to decide if this is a fatal error, given the API is unavailable, or whether the API
-                //       is not critical and we continue anyway.
-                log.error("Web server startup failed", ex)
-            }
+            // TODO: Remove when cleanup
+            //try {
+            //    webServer = initWebServer(connectLocalRpcAsNodeUser())
+            //} catch(ex: Exception) {
+            //    // TODO: We need to decide if this is a fatal error, given the API is unavailable, or whether the API
+            //    //       is not critical and we continue anyway.
+            //    log.error("Web server startup failed", ex)
+            //}
             // Begin exporting our own metrics via JMX.
             JmxReporter.
                     forRegistry(services.monitoringService.metrics).
