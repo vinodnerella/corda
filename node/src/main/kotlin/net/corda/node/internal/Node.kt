@@ -221,7 +221,6 @@ class Node(override val configuration: FullNodeConfiguration, networkMapAddress:
             // Add your API provider classes (annotated for JAX-RS) here
             resourceConfig.register(Config(services))
             resourceConfig.register(ResponseFilter())
-            resourceConfig.register(api)
 
             val webAPIsOnClasspath = pluginRegistries.flatMap { x -> x.webApis }
             for (webapi in webAPIsOnClasspath) {
