@@ -4,7 +4,7 @@ import net.corda.core.getOrThrow
 import net.corda.core.node.services.ServiceInfo
 import net.corda.node.driver.driver
 import net.corda.node.services.transactions.SimpleNotaryService
-import net.corda.testing.getHostAndPort
+import net.corda.node.utilities.getHostAndPort
 import org.junit.Test
 import kotlin.concurrent.thread
 
@@ -12,11 +12,10 @@ class AttachmentDemoTest {
     @Test fun `runs attachment demo`() {
         driver(dsl = {
             startNode("Notary", setOf(ServiceInfo(SimpleNotaryService.Companion.type)))
-            val nodeAFuture = startNode("Bank A")
-            val nodeBApiAddr = startNode("Bank B").getOrThrow().config.getHostAndPort("webAddress")
-
-            val nodeA = nodeAFuture.getOrThrow()
-            val nodeAApiAddr = nodeA.config.getHostAndPort("webAddress")
+            val nodeA = startNode("Bank A").getOrThrow()
+            val nodeB = startNode("Bank B").getOrThrow()
+            val nodeAApiAddr = startWebserver(nodeA).getOrThrow()
+            val nodeBApiAddr = startWebserver(nodeB).getOrThrow()
 
             var recipientReturn: Boolean? = null
             var senderReturn: Boolean? = null

@@ -2,8 +2,6 @@
 
 package net.corda.node.driver
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.module.SimpleModule
 import com.google.common.net.HostAndPort
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
@@ -11,7 +9,6 @@ import net.corda.core.ThreadBox
 import net.corda.core.crypto.Party
 import net.corda.core.div
 import net.corda.core.future
-import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.NodeInfo
 import net.corda.core.node.services.ServiceInfo
 import net.corda.core.node.services.ServiceType
@@ -26,8 +23,8 @@ import net.corda.node.services.messaging.CordaRPCClient
 import net.corda.node.services.messaging.NodeMessagingClient
 import net.corda.node.services.network.NetworkMapService
 import net.corda.node.services.transactions.RaftValidatingNotaryService
-import net.corda.node.utilities.JsonSupport
 import net.corda.node.utilities.ServiceIdentityGenerator
+import net.corda.node.utilities.getHostAndPort
 import org.slf4j.Logger
 import java.io.File
 import java.net.*
@@ -82,6 +79,13 @@ interface DriverDSLExposedInterface {
      * @param type The advertised notary service type. Currently the only supported type is [RaftValidatingNotaryService.type].
      */
     fun startNotaryCluster(notaryName: String, clusterSize: Int = 3, type: ServiceType = RaftValidatingNotaryService.type)
+
+    /**
+     * Starts a web server for a node
+     *
+     * @param config The configuration for the node that this webserver connects to via RPC.
+     */
+    fun startWebserver(config: NodeInfoAndConfig): Future<HostAndPort>
 
     fun waitForAllNodesToFinish()
 }
@@ -300,7 +304,7 @@ open class DriverDSL(
             val client = CordaRPCClient(webAddress, sslConfig)
             client.start(ArtemisMessagingComponent.NODE_USER, ArtemisMessagingComponent.NODE_USER)
             val rpcOps = client.proxy()
-        return rpcOps.nodeIdentity()
+            return rpcOps.nodeIdentity()
         } catch(e: Exception) {
             log.error("Could not query node info at $webAddress due to an exception.", e)
             return null
@@ -361,6 +365,18 @@ open class DriverDSL(
             val nodeAddress = portAllocation.nextHostAndPort()
             val configOverride = mapOf("notaryNodeAddress" to nodeAddress.toString(), "notaryClusterAddresses" to listOf(notaryClusterAddress.toString()))
             startNode(it, advertisedService, emptyList(), configOverride)
+        }
+    }
+
+    override fun startWebserver(config: NodeInfoAndConfig): Future<HostAndPort> {
+        val debugPort = if (isDebug) debugPortAllocation.nextPort() else null
+        val webserverAddress = config.config.getHostAndPort("webAddress")!!
+        val baseDir = Paths.get(config.config.getString("basedir")!!)
+        val artemisAddress = config.config.getHostAndPort("artemisAddress")!!
+
+        return future {
+            registerProcess(DriverDSL.startWebserver(webserverAddress, baseDir, artemisAddress, debugPort))
+            webserverAddress
         }
     }
 
@@ -428,6 +444,33 @@ open class DriverDSL(
             builder.directory(nodeConf.basedir.toFile())
             val process = builder.start()
             addressMustBeBound(nodeConf.artemisAddress)
+
+            return process
+        }
+
+        private fun startWebserver(webAddress: HostAndPort, nodeDir: Path, artemisAddress: HostAndPort, debugPort: Int?): Process {
+            val className = "net.corda.node.webserver.MainKt" // cannot directly get class for this, so just use string
+            val separator = System.getProperty("file.separator")
+            val classpath = System.getProperty("java.class.path")
+            val path = System.getProperty("java.home") + separator + "bin" + separator + "java"
+
+            val debugPortArg = if (debugPort != null)
+                listOf("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$debugPort")
+            else
+                emptyList()
+
+            val javaArgs = listOf(path) +
+                    listOf("-Dname=node-$artemisAddress-webserver") + debugPortArg +
+                    listOf(
+                            "-cp", classpath, className,
+                            "--base-directory", nodeDir.toString(),
+                            "--web-address", webAddress.toString())
+            val builder = ProcessBuilder(javaArgs)
+            builder.redirectError(Paths.get("error.$className.log").toFile())
+            builder.inheritIO()
+            builder.directory(nodeDir.toFile())
+            val process = builder.start()
+            addressMustBeBound(webAddress)
 
             return process
         }

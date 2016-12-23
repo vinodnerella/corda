@@ -152,5 +152,3 @@ inline fun <reified P : FlowLogic<*>> AbstractNode.initiateSingleShotFlow(
 
     return future
 }
-
-fun Config.getHostAndPort(name: String) = HostAndPort.fromString(getString(name))

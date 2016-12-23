@@ -4,7 +4,7 @@ import net.corda.core.getOrThrow
 import net.corda.core.node.services.ServiceInfo
 import net.corda.node.driver.driver
 import net.corda.node.services.transactions.SimpleNotaryService
-import net.corda.testing.getHostAndPort
+import net.corda.node.utilities.getHostAndPort
 import org.junit.Test
 
 class TraderDemoTest {
