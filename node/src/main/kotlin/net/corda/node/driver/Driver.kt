@@ -30,9 +30,11 @@ import java.io.File
 import java.net.*
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset.UTC
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.*
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit.SECONDS
@@ -299,16 +301,20 @@ open class DriverDSL(
         addressMustNotBeBound(networkMapAddress)
     }
 
-    private fun queryNodeInfo(webAddress: HostAndPort, sslConfig: NodeSSLConfiguration): NodeInfo? {
-        try {
-            val client = CordaRPCClient(webAddress, sslConfig)
+    private fun queryNodeInfo(nodeAddress: HostAndPort, sslConfig: NodeSSLConfiguration): NodeInfo? {
+        var retries = 0
+        while (retries < 5) try {
+            val client = CordaRPCClient(nodeAddress, sslConfig)
             client.start(ArtemisMessagingComponent.NODE_USER, ArtemisMessagingComponent.NODE_USER)
-            val rpcOps = client.proxy()
+            val rpcOps = client.proxy(timeout = Duration.of(15, ChronoUnit.SECONDS))
             return rpcOps.nodeIdentity()
         } catch(e: Exception) {
-            log.error("Could not query node info at $webAddress due to an exception.", e)
-            return null
+            log.error("Retrying query node info at $nodeAddress")
+            retries++
         }
+
+        log.error("Could not query node info after $retries retries")
+        return null
     }
 
     override fun startNode(providedName: String?, advertisedServices: Set<ServiceInfo>,
@@ -344,7 +350,9 @@ open class DriverDSL(
 
         return future {
             val nodeConfig = FullNodeConfiguration(config)
+            println("registering process")
             registerProcess(DriverDSL.startNode(nodeConfig, quasarJarPath, debugPort))
+            println("querying and returning node info")
             NodeInfoAndConfig(queryNodeInfo(messagingAddress, nodeConfig)!!, config)
         }
     }
