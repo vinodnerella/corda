@@ -350,9 +350,7 @@ open class DriverDSL(
 
         return future {
             val nodeConfig = FullNodeConfiguration(config)
-            println("registering process")
             registerProcess(DriverDSL.startNode(nodeConfig, quasarJarPath, debugPort))
-            println("querying and returning node info")
             NodeInfoAndConfig(queryNodeInfo(messagingAddress, nodeConfig)!!, config)
         }
     }

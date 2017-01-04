@@ -1,6 +1,8 @@
 package net.corda.attachmentdemo
 
-import com.google.common.net.HostAndPort
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigParseOptions
+import com.typesafe.config.ConfigValueFactory
 import joptsimple.OptionParser
 import net.corda.core.utilities.loggerFor
 import kotlin.system.exitProcess
@@ -31,13 +33,18 @@ private class AttachmentDemo {
             exitProcess(1)
         }
 
+        // TODO:
+        // In order to get this working we need to add a base directory parameter that points at the directory of the
+        // nodes. With the driver this leads to an annoying random parameter - this needs to be addressed, probably
+        // at the driver or demo invocation level.
+
         val role = options.valueOf(roleArg)!!
         when (role) {
             Role.SENDER -> {
-                val api = AttachmentDemoClientApi(HostAndPort.fromString("localhost:10005"))
+                val api = AttachmentDemoClientApi(a)
                 api.runSender(api.getOtherSideKey())
             }
-            Role.RECIPIENT -> AttachmentDemoClientApi(HostAndPort.fromString("localhost:10007")).runRecipient()
+            Role.RECIPIENT -> AttachmentDemoClientApi(b).runRecipient()
         }
     }
 
