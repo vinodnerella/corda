@@ -37,6 +37,8 @@ class IRSPlugin : CordaPluginRegistry() {
             register(InterestRateSwap.FloatingLeg::class.java)
             register(InterestRateSwap.Calculation::class.java)
             register(InterestRateSwap.Common::class.java)
+            register(FixedRatePaymentEvent::class.java)
+            register(FloatingRatePaymentEvent::class.java)
             register(Expression::class.java)
             register(HashMap::class.java)
             register(LinkedHashMap::class.java)
