@@ -91,6 +91,8 @@ Read on to learn:
    :caption: Other
 
    network-simulator
+   clauses
+   merkle-trees
 
 .. toctree::
    :maxdepth: 2

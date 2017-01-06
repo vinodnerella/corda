@@ -1,10 +1,6 @@
 Data model
 ==========
 
-This article covers the data model: how *states*, *transactions* and *contract code* interact with each other and
-how they are represented in software. It doesn't attempt to give detailed design rationales or information on future
-design elements. Please refer to the white papers for background information.
-
 Overview
 --------
 Corda uses the so-called "UTXO set" model (unspent transaction output). In this model, the database
@@ -12,21 +8,16 @@ does not track accounts or balances. An entry is either spent or not spent but i
 database is a set of immutable rows keyed by (hash:output index). Transactions define outputs that append new rows and
 inputs which consume existing rows.
 
-To ensure consistency in a global, shared system where not all data may be visible to all participants, we rely
-heavily on secure hashes like SHA-256 to identify things. The ledger is defined as a set of immutable **states**, which
-are created and destroyed by digitally signed **transactions**. Each transaction points to a set of states that it will
-consume/destroy, these are called **inputs**, and contains a set of new states that it will create, these are called
-**outputs**.
+The Corda ledger is defined as a set of immutable **states**, which are created and destroyed by digitally signed **transactions**.
+Each transaction points to a set of states that it will consume/destroy, these are called **inputs**, and contains a set
+of new states that it will create, these are called **outputs**.
+Although the ledger is shared, it is not always the case that transactions and ledger entries are globally visible.
+In cases where a set of transactions stays within a small subgroup of users it is possible to keep the relevant
+data purely within that group. To ensure consistency, we rely heavily on secure hashes like SHA-256 to identify things.
 
-Base characteristics of this model are:
+The Corda model provides the following additional features:
 
-* Immutable states are consumed and created by transactions
-* Transactions can have multiple inputs and outputs
-* A contract is pure function; contracts do not have storage or the ability to interact with anything. Given the same
-  transaction, a contract’s “verify” function always yields exactly the same result.
-
-Corda further enhances this with additional features:
-
+* There is no global broadcast at any point.
 * States can include arbitrary typed data.
 * Transactions invoke not only input contracts but also the contracts of the outputs.
 * Uses the term “contract” to refer to a bundle of business logic that may handle various different tasks,
@@ -38,10 +29,6 @@ Corda further enhances this with additional features:
   Instead each state points to a notary, which is a service that guarantees it will sign a transaction only if all the
   input states are un-consumed.
 
-In our model although the ledger is shared, it is not always the case that transactions and ledger entries are globally visible.
-In cases where a set of transactions stays within a small subgroup of users it should be possible to keep the relevant
-data purely within that group.
-
 Corda provides three main tools to achieve global distributed consensus:
 
 * Smart contract logic to ensure state transitions are valid according to the pre-agreed rules.
@@ -52,11 +39,9 @@ Comparisons of the Corda data model with Bitcoin and Ethereum can be found in th
 
 States
 ------
-A state object represents an agreement between two or more parties, governed by machine-readable contract code.
+A state object represents an agreement between two or more parties, the evolution of which governed by machine-readable contract code.
 This code references, and is intended to implement, portions of human-readable legal prose.
-A state object is a digital document which records the existence, content and current state of an agreement between
-two or more parties. It is intended to be shared only with those who have a legitimate reason to see it.
-The ledger is defined as a set of immutable state objects.
+It is intended to be shared only with those who have a legitimate reason to see it.
 
 The following diagram illustrates a state object:
 
@@ -85,7 +70,7 @@ the transaction if the proposed actions are valid.
 Contracts define part of the business logic of the ledger.
 
 Contracts define a **verify function**, which is a pure function given the entire transaction as input. To be considered
-valid, the transaction must be **accepted** by the verify function of every contract pointed to by the input and output
+valid, the transaction must be **accepted** by the verify function of every contract pointed to by it's input and output
 states. Contracts do not have storage or the ability to interact with anything. Given the same transaction, a contract’s
 “verify” function always yields exactly the same result.
 
@@ -94,31 +79,25 @@ states. Contracts do not have storage or the ability to interact with anything. 
           JVM custom sandbox that is radically more restrictive than the ordinary JVM sandbox, and it enforces not only
           security requirements but also deterministic execution.
 
-A Corda contract is composed of two parts: the executable code and the state schemas that represent
-the details of a specific deal or asset. In relational database terms a state is like a row in a database.
-
 To further aid writing contracts we introduce the concept of :doc:`clauses` which provide a means of re-using common
 verification logic.
 
 Transactions
 ------------
-Transaction are used to update the ledger by consuming existing state objects and producing new state objects. In doing so
-they transition state objects through a lifecycle.
+Transaction are used to update the ledger by consuming existing state objects and producing new state objects.
 
 A transaction update is accepted according to the following two aspects of consensus:
 
-   #. Transaction validity: parties can reach certainty that a proposed update transaction defining output states is valid
-      by checking that the associated contract code runs successfully and has all the required signatures; and that any
-      transactions to which this transaction refers are also valid.
-   #. Transaction uniqueness: parties can reach certainty that the transaction in question is the unique consumer of all its
-      input states. That is, there exists no other transaction, over which we have previously reached consensus (validity and uniqueness),
-      that consumes any of the same states.
+   #. Transaction validity: parties can ensure that the proposed transaction and all its ancestors are valid
+      by checking that the associated contract code runs successfully and has all the required signatures
+   #. Transaction uniqueness: parties can ensure there exists no other transaction, over which we have previously reached
+      consensus (validity and uniqueness), that consumes any of the same states. This is the responsibility of a notary service.
 
 Beyond inputs and outputs, transactions may also contain **commands**, small data packets that
-the platform does not interpret itself but which can parameterise execution of the contracts. They can be thought of as
+the platform does not interpret itself but which parameterise execution of the contracts. They can be thought of as
 arguments to the verify function. Each command has a list of **composite keys** associated with it. The platform ensures
-that the transaction has signatures satisfying every key listed in the commands before the contracts start to execute. Thus, a verify
-function can trust that all listed keys have signed the transaction but is responsible for verifying that any keys required
+that the transaction has signatures matching every key listed in the commands before the contracts start to execute. Thus, a verify
+function can trust that all listed keys have signed the transaction, but is responsible for verifying that any keys required
 for the transaction to be valid from the verify function's perspective are included in the list. Public keys
 may be random/identityless for privacy, or linked to a well known legal identity, for example via a
 *public key infrastructure* (PKI).
@@ -133,7 +112,7 @@ would be loaded.
 
 .. note:: Attachments must be opened explicitly in the current code.
 
-Note that there is nothing that explicitly binds together specific inputs, outputs, commands or attachments. Instead
+Note that there is nothing that explicitly binds together specific inputs, outputs, commands or attachments. Instead,
 it's up to the contract code to interpret the pieces inside the transaction and ensure they fit together correctly. This
 is done to maximise flexibility for the contract developer.
 
@@ -154,7 +133,7 @@ a special type of transaction is provided that moves a state (or set of states) 
 
 Transaction Validation
 ^^^^^^^^^^^^^^^^^^^^^^
-When a transaction is presented to a node as part of a flow it may need to be checked. Checking transaction validity is
+When a transaction is presented to a node as part of a flow it may need to be checked. Checking original transaction validity is
 the responsibility of the ``ResolveTransactions`` flow. This flow performs a breadth-first search over the transaction graph,
 downloading any missing transactions into local storage and validating them. The search bottoms out at the issuance transactions.
 A transaction is not considered valid if any of its transitive dependencies are invalid.
@@ -163,3 +142,9 @@ A transaction is not considered valid if any of its transitive dependencies are 
           beyond the list of states consumed.
 
 The tutorial " :doc:`tutorial-contract` "provides a hand-ons walk-through using these concepts.
+
+Transaction Representation
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+By default, transaction data (input and output states, commands, attachments) is globally visible to all participants in
+a multi-party, multi-flow business workflow. :doc:`merkle-trees` describes how Corda uses Merkle trees to
+ensure data integrity and hiding of sensitive data that shouldn't be globally visible.

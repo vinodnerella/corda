@@ -3,10 +3,12 @@ Corda ecosystem
 
 A Corda network consists of the following components:
 
-* Nodes, communicating using AMQP/1.0 over TLS
+* Nodes, where each node represents a JVM run-time environment hosting Corda services and executing applications ("CorDapps").
+  Nodes communicate using AMQP/1.0 over TLS.
 * A permissioning service that automates the process of provisioning TLS certificates.
 * A network map service that publishes information about nodes on the network.
-* One or more notary services. A notary may itself be distributed over multiple nodes.
+* One or more pluggable notary service types (which may be distributed over multiple nodes).
+  A notary guarantees uniqueness and validity of transactions.
 * Zero or more oracle services. An oracle is a well known service that signs transactions if they state a fact and that fact is considered to be true.
 * CorDapps which represent participant applications that execute contract code and communicate using the flow framework to achieve consensus over some business activity
 * Remote Corda applications that provide manageability and tooling support to a Corda network.
@@ -34,3 +36,6 @@ The combination of state objects (data), contract code (allowable operations), t
 choreography), any necessary APIs, vault plugins, and UI components can be thought of as a shared ledger application,
 or corda distributed application (“CorDapp”). This is the core set of components a contract developer on the platform
 should expect to build.
+
+Examples of CorDapps include asset trading (see :ref:`irs-demo` and :ref:`trader-demo`), portfolio valuations (see :ref:`simm-demo`), trade finance,
+post-trade order matching, KYC/AML, etc.

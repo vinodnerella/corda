@@ -7,7 +7,8 @@ Flows enable complex multi-step, multi-party business interactions to be modelle
 The code is transformed into an asynchronous state machine, with checkpoints written to the node’s backing database when messages are sent and received.
 A node may potentially have millions of flows active at once and they may last days, across node restarts and even upgrades.
 
-A flow library is provided to enable developers to re-use common flow types such as notarisation, membership broadcast and so on.
+A flow library is provided to enable developers to re-use common flow types such as notarisation, membership broadcast,
+transaction resolution and recording, and so on.
 
 APIs are provided to send and receive object graphs to and from other identities on the network, embed sub-flows,
 report progress information to observers and even interact with people (for manual resolution of exceptional scenarios)
