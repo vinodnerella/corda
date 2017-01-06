@@ -48,7 +48,6 @@ The following diagram illustrates a state object:
 .. image:: resources/contract.png
 
 In the diagram above, we see a state object representing a cash claim of £100 against a commercial bank, owned by a fictional shipping company.
-The state object explicitly refers by hash to its governing legal prose and to the contract code that governs its transitions.
 
 .. note:: Legal prose (depicted above in grey-shade) is currently implemented as an unparsed reference to the natural language
           contract that the code is supposed to express (usually a hash of the contract's contents).
