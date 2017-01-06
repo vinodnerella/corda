@@ -58,16 +58,6 @@ class Node {
     }
 
     /**
-     * Set the directory the node will be installed to relative to the directory specified in Cordform task.
-     *
-     * @param dirName Subdirectory name for node to be installed to. Must be valid directory name on all OSes.
-     */
-    void dirName(String dirName) {
-        this.dirName = dirName
-        config = config.withValue("basedir", ConfigValueFactory.fromAnyRef(dirName))
-    }
-
-    /**
      * Set the nearest city to the node.
      *
      * @param nearestCity The name of the nearest city to the node.

@@ -69,7 +69,7 @@ The configuration file and workspace paths can be overidden on the command line 
 
 ``java -jar corda.jar --config-file=test.conf --base-directory=/opt/r3corda/nodes/test``.
 
-Otherwise the workspace folder for the node is created based upon the ``basedir`` property in the ``node.conf`` file and if this is relative it is applied relative to the current working path.
+Otherwise the workspace folder for the node is the current working path.
 
 Debugging your node
 -------------------

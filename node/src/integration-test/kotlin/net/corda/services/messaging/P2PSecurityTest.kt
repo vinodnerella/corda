@@ -2,9 +2,12 @@ package net.corda.services.messaging
 
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.support.jdk7.use
-import net.corda.core.*
 import net.corda.core.crypto.Party
+import net.corda.core.div
+import net.corda.core.getOrThrow
 import net.corda.core.node.NodeInfo
+import net.corda.core.random63BitValue
+import net.corda.core.seconds
 import net.corda.flows.sendRequest
 import net.corda.node.internal.NetworkMapInfo
 import net.corda.node.services.config.configureWithDevSSLCertificate
@@ -52,7 +55,7 @@ class P2PSecurityTest : NodeBasedTest() {
 
     private fun startSimpleNode(legalName: String): SimpleNode {
         val config = TestNodeConfiguration(
-                basedir = tempFolder.root.toPath() / legalName,
+                baseDirectory = tempFolder.root.toPath() / legalName,
                 myLegalName = legalName,
                 networkMapService = NetworkMapInfo(networkMapNode.configuration.artemisAddress, networkMapNode.info.legalIdentity.name))
         config.configureWithDevSSLCertificate() // This creates the node's TLS cert with the CN as the legal name
